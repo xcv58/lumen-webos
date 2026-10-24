@@ -1,93 +1,130 @@
-# Upstream-first webOS 5 experiment
+# Upstream Lumen with the accepted webOS 5 presentation
 
-This branch starts at upstream Lumen v1.1.4, commit
-`a85b99a4a415b4f2fff5e09d50c85ce950a0504f`. It retains upstream's complete
-92-layer build and UI. The maintained `webos5` fork and the accepted TV launcher
-remain separate while this approach is evaluated.
+The separate **Lumen Upstream Trial 1.1.5** now carries the accepted Home grid,
+Inputs and Control Center surfaces, volume pill, focus feedback, cached daily
+backgrounds and photo frame. It starts from upstream Lumen v1.1.4 at
+`a85b99a4a415b4f2fff5e09d50c85ce950a0504f` and applies all 92 upstream layers.
+The upstream scripts are unchanged; the presentation is a readable module layer.
+The maintained `webos5` fork and the accepted default TV app remain separate.
 
-## Build
+## What matches
 
-Use Python 3.9+ and upstream's Node/npm toolchain. Prepare `app/` following
-the upstream rebuild instructions, pinned to the original launcher commit
+- Five-column expanding app grid; Down expands and Back collapses. Moving apps
+  across rows and folders retains focus. Recent history is independent of whether
+  a Recent row is displayed.
+- Shared rounded Inputs and Control Center surfaces, including the accepted
+  border-box tint, padding-box wallpaper alignment, uniform corners and soft
+  upper-edge highlight. Long text stays inside its controls.
+- The accepted volume pill: bright fill on the left, subdued transparent empty
+  area on the right, a separate focus rim, and clipped text/icon contrast. Shape
+  and layout are unchanged.
+- Immediate Home, Inputs, Control Center and choice-list focus cues, one shared
+  low-level keepalive, quiet boundaries/hover/opening/Back/volume changes, and
+  cleanup for Off, background and photo-frame mode. No TV audio settings are
+  changed by the sound module.
+- Cached Bing scenic backgrounds, optional SFW collection, gradients and the
+  accepted in-app photo frame with clock, captions, crossfades and pan/zoom.
+  Cache files and idle handling belong only to the candidate.
+
+Upstream Settings keeps its newer stacked pages. More TV controls and App switcher
+are available in Settings > System. Upstream StandBy, Photos in Lumen, aerials,
+wallpaper library and Immich implementation remain. Settings > Appearance >
+Matched Home and panels can switch back to the upstream presentation. Options
+that only affect upstream's flexible Home composition are hidden while the fixed
+accepted composition is selected. Screensaver type can select either the matched
+photo frame or an upstream screensaver.
+
+## Structure and build
+
+`ui/` contains the accepted presentation modules from the maintained fork at
+`2e38e071c0d531d8244c4001250e278d5aa8ab22`, retaining the project's MIT licensing.
+Shared app state, settings, app management and upstream screen implementations
+remain upstream. `presentation.py` connects the modules after the upstream build;
+`scope-css.mjs` scopes accepted styles and tokens to their own layer. Separate
+panel modifiers prevent upstream's panel-reset rules from leaking into these
+surfaces. The shared keyboard listener and StandBy's listener install during the
+layout commit, correcting a first-key race found by the integration checks.
+
+Use Python 3.9+, Node/npm and upstream's toolchain. Prepare `app/` as in the
+upstream rebuild instructions, pinned to launcher commit
 `1e2c39b9a988ceb1b258e40e3592bda84a2aa076`, and install its npm dependencies.
-Place the official v1.1.4 release IPK and its published `SHA256SUMS.txt` in
-`../lumen-upstream-first-evidence/upstream-release/`.
+Place the official v1.1.4 IPK and its published `SHA256SUMS.txt` in
+`../lumen-upstream-first-evidence/upstream-release/`. Then run:
 
-Run `python3 compat/build.py` from the repository root. This resets the
-generated app's tracked source, manifest, index and Vite config, applies all
-upstream layers, applies the small compatibility layer, and builds the package.
-Keep edits in the upstream scripts or `compat/`, rather than in generated `app/`.
-The output is `app/build/local.lumen.upstreamtrial_1.1.4_all.ipk`.
+```sh
+python3 compat/build.py
+```
 
-`run-layer.py` substitutes upstream's hardcoded developer path in memory.
-It leaves the upstream scripts on disk unchanged. The build follows upstream's
-documented allowance for the already-applied `apply_dockhide` edit.
+This regenerates `app/`, applies all upstream layers, applies compatibility and
+presentation changes, and emits
+`app/build/local.lumen.upstreamtrial_1.1.5_all.ipk`. Keep authoring changes in
+`compat/`, rather than in generated `app/`. `run-layer.py` substitutes upstream's
+hardcoded developer directory in memory; the known already-patched watcher
+assertion is tolerated only when its expected UI and watcher markers are present.
 
-## Compatibility and trial isolation
+Ordinary builds use the original generated generic cue. The owner's local build
+uses `--local-reference`, which reads the selected PCM and icon pack from the
+private evidence directory. Local assets, TV preferences, connection helpers,
+credentials and actual TV screenshots are never source or public release assets.
+The local build's app order and photo cache are copied separately into only the
+candidate's profile on the TV. Public build defaults do not contain owner data.
 
-- Compile JS and CSS for Chrome 68; keep upstream's classic script bundle.
-- Use app ID `local.lumen.upstreamtrial` and title **Lumen Upstream Trial**.
-  Remove the native Home category and isolate backup/marker paths under
-  `/tmp/lumen-upstreamtrial`. No Home watcher or startup service is installed.
-- Route sleep-timer reads and writes through the existing Homebrew root bridge.
-  On the tested webOS 5 TV, upstream's direct web-app request fails, while the
-  root request succeeds. Validate timer choices and check the native response.
-  Reads combine the separate remaining-minute and remaining-second fields,
-  while also handling a seconds-only response.
-- Protect both the accepted launcher and candidate from the app's uninstall menu.
-- Start weather Off. Use artwork and licenses from the checksummed official
-  public package; do not copy private fonts, photos, audio or TV preferences.
+## webOS 5 and isolation
 
-The only runtime behavior fix discovered so far is the sleep-timer bridge.
-Identity/path changes isolate the experiment; they are not evidence of upstream
-UI incompatibility. The base launcher commit is the same as the maintained fork.
+The JavaScript/CSS target is Chrome 68, retaining upstream's classic script.
+Sleep timer reads/writes use the existing Homebrew bridge, validate values and
+combine the TV's remaining-minute and remaining-second fields. Controls confirm
+writes, retain unknown values on failed reads, reject stale responses and filter
+picture/sound modes against the TV's descriptions.
 
-## Initial device results
+The candidate ID is `local.lumen.upstreamtrial`; its native Home category is
+removed. Backup/flag/idle state is under `/tmp/lumen-upstreamtrial`, and photo
+files are in its own app directory. It installs no persistent Home/startup
+service. Both accepted Trial and this candidate are protected from the uninstall
+menu. The previously approved Home mapping and startup/wake hooks still target
+`local.lumen.trial`.
 
-Tested on an LG 86UN8570AUD, webOS 5.6.2-21, firmware 04.64.00,
-Chrome 68.0.3440.106. The complete upstream UI launches and renders.
-Automated native checks passed for onboarding, app discovery, Down/Back between
-app rows, Inputs movement/Back, Control Center's Sound list, Settings, local
-photo slideshow changes and exit, and StandBy Digital/Analog movement and exit.
-The backlight slider changed the actual TV value and the baseline was restored.
-The corrected sleep timer set 60 minutes on the real TV, remained at 60 minutes
-after reopening Control Center, and was cancelled after the check.
+## Verification
 
-Final preservation checks matched the accepted app's manifest, bundle, audio
-cue, configuration, Home mapping and startup-hook hashes against the fresh
-pre-install snapshot. Volume, sound, picture, backlight and global screensaver
-settings matched; the sleep timer was Off. Both apps could be launched, and the
-candidate's installed bundle matched the production build. The accepted app
-remains the Home/startup target. The maintained fork checkout stayed clean at
-`2e38e071c0d531d8244c4001250e278d5aa8ab22`.
+Install test dependencies with `npm --prefix compat/tests ci` and install
+Playwright's Chromium, or set `CHROMIUM_PATH` to an existing browser. Serve the
+candidate production `app/dist` on localhost port 5191. The adapted checks are:
 
-Final candidate IPK SHA256:
-`79ee75ef53348af3796a9d9409078ffa3137ae1e287c1d59c66731a47c169f09`.
-Temporary transfer files were confined to `/tmp`; the restricted package server
-closed after its 90-second limit and the local browser preview was stopped.
+```sh
+TRIAL_URL=http://127.0.0.1:5191 node compat/tests/panel-tests.mjs
+TRIAL_URL=http://127.0.0.1:5191 node compat/tests/grid-edit-tests.mjs
+TRIAL_URL=http://127.0.0.1:5191 node compat/tests/upstream-integration-tests.mjs
+```
 
-The desktop production preview also passed onboarding, row navigation, Inputs
-and Control Center with no page exceptions. Upstream's five Python checks and
-startup readiness suite passed. Optional private SF font requests fail because
-those files are intentionally absent; the packaged fallback font renders.
+The navigation-sound suite uses a Vite preview on port 5193 because it also
+inspects the source module. For the reference comparison, serve the accepted
+0.3.13 build (or the maintained 0.3.14 build with the same UI) on port 5192 and run
+`node compat/tests/match-tests.mjs`. The comparison uses identical synthetic
+preferences, fixed time and the same painting; external requests are blocked.
+Evidence is written under ignored `.trial-evidence/`.
 
-Physical remote feel and owner visual acceptance remain separate from these
-automated checks. Video/aerial streaming, Immich, every sound/picture mode,
-clock face, idle timing and long-running stability have not been exhaustively
-tested. No full standby/reboot or default-Home experiment is needed at this stage.
+Browser checks passed for accepted geometry/colors, grid editing/folders, input
+state and focus restoration, both-appearance volume rendering at 0/25/50/75/100,
+stale/failed reads, rapid focus feedback, native audio fixtures and keepalive
+cleanup. Upstream controls/style switching and StandBy navigation also passed.
+The five upstream Python checks and startup readiness suite passed.
 
-## Differences to assess before adoption
+Real-TV checks use LG 86UN8570AUD, webOS 5.6.2-21, firmware 04.64.00, Chrome 68.
+The installed 1.1.5 bundle and selected cue hashes matched. Native checks passed
+for Home/grid, Inputs and Control Center geometry and text bounds, the live volume
+fill with retained focus, choice/input return focus and the photo frame's consumed
+wake key. Twelve rapid Home moves dispatched twelve successful native cues, with
+measured JS dispatch delays of 0.7–4.8 ms. Inputs and Control Center shared one
+keepalive, which stopped for the photo frame and resumed silently afterward.
+The accepted bundle, cue, config, Home mapping and startup hooks matched their
+fresh pre-install snapshot; original volume, picture, sound and global screensaver
+settings were preserved. The maintained fork checkout remained clean.
 
-| Area | Upstream-first candidate | Accepted launcher |
-| --- | --- | --- |
-| Apps below dock | Upstream scrolling app rows | Custom expanding app grid |
-| Inputs and Control Center | Current upstream glass and animations | Accepted panel contrast, borders and corners |
-| Volume | Remote volume buttons; panel has Backlight | Accepted volume pill in Control Center |
-| Focus feedback | Upstream behavior | Accepted immediate sounds on Home and panels |
-| Photos/backgrounds | Upstream library, local photos, StandBy and aerial options | Accepted daily-photo/background implementation |
-| Startup and Home | Separate manually launched candidate | Existing approved Home mapping and wake helper |
+The installed local candidate IPK SHA256 is
+`6544df362820665ce7cfce6ccf0f6d99ed6139426595de8b01e2ce6807acf20a`.
+This local package contains the owner's selected cue/artwork and is not a public
+release asset. Detailed device evidence remains outside Git.
 
-Detailed native snapshots and TV screenshots stay outside this repository in
-the private evidence directory. They must not be included in public commits.
-Do not change the accepted app's identity, preferences or Home hooks to promote
-this candidate until the owner has evaluated the differences.
+Physical listening and owner visual acceptance of this new candidate are separate
+from automated checks. A full ten-minute idle test and exhaustive aerial/Immich
+or multi-hour stability checks are outside this trial.

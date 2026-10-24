@@ -1,0 +1,29 @@
+{
+  "appIds": [
+    "youtube.leanback.v4",
+    "amazon",
+    "netflix",
+    "cdp-30",
+    "com.webos.app.browser",
+    "org.webosbrew.hbchannel"
+  ],
+  "sourceIds": null,
+  "useHomebrew": false,
+  "showWeather": false,
+  "wallpaper": "local:0",
+  "idleMinutes": 0,
+  "photoSeconds": 30,
+  "wpAutoMinutes": 0,
+  "clockFormat": "24h",
+  "darkMode": "on",
+  "dockHide": "off",
+  "recentMode": "off",
+  "recentIds": [
+    "youtube.leanback.v4"
+  ],
+  "folders": [],
+  "seeded": true,
+  "onboarded": true,
+  "acceptedUI": true,
+  "acceptedFrame": true
+}

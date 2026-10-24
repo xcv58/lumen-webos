@@ -13,3 +13,6 @@ release/
 
 # Personal TV icon exports
 lumen-icons/
+
+.trial-evidence/
+compat/tests/node_modules

@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tarfile
 from webos5 import apply as apply_webos5
+from presentation import apply as apply_presentation
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / 'app'
@@ -30,6 +31,7 @@ def layer(name):
 assert subprocess.check_output(['git', '-C', str(APP), 'rev-parse', 'HEAD'], text=True).strip() == PIN
 run('git', 'merge-base', '--is-ancestor', UPSTREAM_COMMIT, 'HEAD', cwd=ROOT)
 run('git', 'checkout', '--', 'src', 'index.html', 'public/appinfo.json', 'vite.config.ts')
+shutil.rmtree(APP / 'public/iconpack', ignore_errors=True)
 shutil.copytree(ROOT / 'app-assets/public', APP / 'public', dirs_exist_ok=True)
 layer('build_catalog.py')
 layer('build_iconpack.py')
@@ -49,8 +51,10 @@ for name in names:
         assert 'VIDEO_FLAG=/var/lib/homehook/video-wallpaper' in (ROOT / 'tools/tv/watch.sh').read_text()
         print('Same upstream exception: the tracked watcher edit may already be applied.')
 
-# Keep upstream's UI. These are compatibility/identity/isolation changes only.
+# Keep upstream's features and layer the accepted presentation onto its state.
 runtime_compat = apply_webos5(APP)
+apply_presentation(APP, ROOT)
+run('node', ROOT / 'compat/scope-css.mjs')
 vite = APP / 'vite.config.ts'
 source = vite.read_text()
 assert "const BROWSER_TARGET = 'chrome79'" in source
@@ -70,7 +74,7 @@ for path in (APP / 'src').rglob('*'):
         changed.append(str(path.relative_to(APP)))
 manifest_path = APP / 'public/appinfo.json'
 manifest = json.loads(manifest_path.read_text())
-manifest.update(id=APP_ID, title='Lumen Upstream Trial', vendor='Local compatibility experiment', inspectable=True)
+manifest.update(id=APP_ID, version='1.1.5', title='Lumen Upstream Trial', vendor='Local compatibility experiment', inspectable=True)
 manifest.pop('appCategory', None)
 manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
 
@@ -112,8 +116,18 @@ EVIDENCE.mkdir(exist_ok=True)
  'launcherBase': PIN, 'upstreamLayersApplied': len(names), 'appId': APP_ID,
  'browserTarget': 'chrome68', 'compatibilityChangedSourceFiles': changed,
  'runtimeCompatibilityFiles': runtime_compat,
+ 'matchedPresentation': True,
+ 'localReferenceAssets': '--local-reference' in sys.argv,
  'publicReleaseSHA256': digest, 'publicAssets': public_assets,
  'homeCategoryRemoved': True, 'sharedBackupPathsIsolated': True,
 }, indent=2) + '\n')
+# Public cue by default. The owner's selected cue stays outside Git.
+run(sys.executable, ROOT / 'compat/generate-navigation-sound.py', '--output', APP / 'public/sounds/navigation-focus-v1.pcm', cwd=ROOT)
+private_cue = EVIDENCE / 'reference-assets/navigation-focus-v1.pcm'
+if '--local-reference' in sys.argv:
+    assert private_cue.is_file(), 'Prepare the private reference cue first'
+    shutil.copy2(private_cue, APP / 'public/sounds/navigation-focus-v1.pcm')
+    shutil.copytree(EVIDENCE / 'reference-assets/iconpack', APP / 'public/iconpack', dirs_exist_ok=True)
+    shutil.copy2(EVIDENCE / 'reference-assets/iconpack.ts', APP / 'src/config/iconpack.ts')
 run('npm', 'run', 'build')
 run('npm', 'run', 'package')
