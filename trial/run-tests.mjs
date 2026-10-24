@@ -18,5 +18,5 @@ try {
  }
  if(!ready)throw new Error('Trial preview did not start: '+log);
  const selected=process.argv.slice(2);
- for(const file of selected.length?selected:['icon-tests.mjs','browser-tests.mjs','grid-edit-tests.mjs','visual-tests.mjs','panel-tests.mjs','navigation-sound-tests.mjs'])await run(file);
+ for(const file of selected.length?selected:['icon-tests.mjs','public-preview-tests.mjs','browser-tests.mjs','grid-edit-tests.mjs','visual-tests.mjs','panel-tests.mjs','navigation-sound-tests.mjs'])await run(file);
 } finally {server.kill('SIGTERM');}

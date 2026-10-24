@@ -1,83 +1,100 @@
-# Lumen
+# Lumen for webOS 5
 
-A tvOS-style home screen for rooted LG webOS TVs, tuned for a weak TV graphics chip. Lumen is a set of patches on top of
-[partridgeworks/webos-launcher](https://github.com/partridgeworks/webos-launcher) (MIT), plus a few small scripts that run on the TV.
-Its companion is [Lumen Gallery](https://github.com/ammar027/lumen-gallery-webos), an art-mode screensaver.
+A webOS 5 / Chromium 68 launcher preview with a five-column app grid, Inputs,
+Control Center, a photo frame and optional focus sounds. This fork continues the
+trial from [Lumen PR #8](https://github.com/ammar027/lumen-webos/pull/8).
 
-Tested on an LG 65UQ8040PSB (webOS 22, Chromium 87, 1.5 GB RAM). It needs a rooted TV with the
-[Homebrew Channel](https://www.webosbrew.org/); a few features (screen off, restart, picture mode, the Home-button takeover) use its root service.
+**[Download preview 0.3.14](https://github.com/xcv58/lumen-webos/releases/tag/webos5-v0.3.14)**
+· [Install and recovery](docs/INSTALL-WEBOS5.md)
+· [Build and tests](trial/README.md)
+· [Comparison with Lumen 1.1](docs/UPSTREAM-1.1-COMPARISON.md)
 
-## Demo
+This is an experimental fork of [ammar027/Lumen](https://github.com/ammar027/lumen-webos),
+built on [partridgeworks/webos-launcher](https://github.com/partridgeworks/webos-launcher).
+Upstream Lumen remains the project for its newer-TV layout and release pipeline.
 
-![A short walkthrough: moving along the dock, the second row, and Control Center](docs/demo/lumen-demo.gif)
+## Preview
 
-[Watch it as a video (MP4)](docs/demo/lumen-demo.mp4). Recorded from the dev preview with `node tools/record-demo.mjs`.
+| Home | Expanded app grid |
+| --- | --- |
+| ![Home with generated cards](docs/trial/home.png) | ![Five-column grid](docs/trial/grid.png) |
+| **Inputs** | **Control Center** |
+| ![Inputs with demo values](docs/trial/inputs.png) | ![Focused volume pill at 50](docs/trial/control-center.png) |
 
-## Screenshots
+[Full gallery, light appearance and photo frame](trial/README.md).
+Screenshots use synthetic preferences, a fixed clock and generated artwork.
+Public builds contain generated text cards, abstract backgrounds and an original
+generic sound. Optional native icons are read from the user's own TV.
 
-Made from the dev preview at 1920 x 1080 (`node tools/screenshots.mjs`); the wallpaper is a public-domain painting from the Cleveland Museum of Art.
+## What it does
 
-![Home screen: a glass dock of apps, date and weather top left, Inputs and Control Center top right](docs/screenshots/home.jpg)
-![Moving down: the second row of apps appears over a blurred wallpaper](docs/screenshots/more-apps.jpg)
-![Control Center: sound, picture, sleep timer, screensaver, quick actions and volume](docs/screenshots/control-center.jpg)
-![Settings, Options tab: a scrolling list with a scroll indicator](docs/screenshots/settings-options.jpg)
+- Down expands a five-column grid; Back collapses it. Folders and app moving remain
+  available, with optional Recent visibility.
+- Large PNG, JPEG and WebP native icons are read in bounded chunks. One failed icon
+  does not discard the other icons.
+- Inputs show AV/HDMI names, custom labels, connection state and distinct active
+  versus last-used indications.
+- Control Center offers sound, picture, sleep, audio and photo-frame choices, with
+  confirmed settings and protection against stale replies. The volume pill fills
+  brightly from the left and retains a separate focus rim.
+- The in-app photo frame offers transitions, captions, a clock and consumed wake
+  keys. Scenic Bing and optional SFW Wallhaven collections use bounded caching.
+- Off / Soft focus sounds cover Home, Inputs and Control Center. Navigation sounds,
+  live app discovery and weather start Off on a fresh install.
 
-## What it adds
+## Compatibility and validation
 
-- **tvOS navigation and look:** a glass dock row of apps, a second row of more apps and a Recent row that appear as you move down, focus lift with a name
-  under the tile, a wallpaper library (cloud and bundled, shuffle per category, favourites, auto-change, night dimming), folders, hold-OK menu
-  (move, remove, add to folder), and a Settings app in the same style.
-- **Control Center:** sound, picture mode, sleep timer, screensaver start time, LG Home, Settings, Art mode, start screensaver, screen off, restart and volume.
-- **Appearance:** Light, Dark or Auto (dark from 7 pm to 6 am), in Settings and in the Control Center; the dock can slide away with Down or after a few idle seconds.
-- **Video wallpaper:** Settings > Wallpaper > Video. Pick one or several places (Switzerland, Norway, Iceland, Italy, Greece, Germany, Czechia, Spain, the Netherlands,
-  Portugal and more, plus Apple's aerial videos); it streams from the internet and pauses LG's screensaver while it plays.
-- **Language and clock:** nine languages for the menus, dates and weather, and a 12 / 24-hour option. **Weather:** pick a country and a city (about 180 cities).
-- **Top left:** date, time and weather (Open-Meteo, optional city); top right: Inputs and Control Center.
-- **Cheap on purpose:** no live blur or SVG filters. The "glass" is a pre-blurred copy of the wallpaper seen through the glass shapes, with static rim lights;
-  only `transform` and `opacity` animate. See [RESEARCH.md](RESEARCH.md).
-- **TV side** ([tools/tv/](tools/tv/)): a small watcher that turns the remote's Home button into "open Lumen" and starts Lumen Gallery when the TV's screensaver
-  starts, plus an update-notification blocker.
+The target is webOS 5 with Chromium 68. Full app discovery, native icons and some
+TV controls require a rooted TV with [Homebrew Channel](https://www.webosbrew.org/).
+Enable “Live app list via Homebrew Channel” in Settings → Options for app discovery;
+privileged controls use the existing Homebrew service when invoked.
 
-## Easy install: download the .ipk
+| Evidence | Scope |
+| --- | --- |
+| Physical TV baseline | LG 86UN8570AUD, webOS 5.6.2-21, firmware 04.64.00; accepted 0.3.13 UI, remote navigation, quick controls and photo frame |
+| Public 0.3.14 preview | Same UI, generic assets, fresh-install privacy defaults; production build, package checks and browser fixtures |
+| Separate local setup | Home mapping, reboot launch, standby/wake and LG Home return were accepted on that TV; those root hooks are not in this package |
 
-Don't want to build anything? Download `com.ammar027.lumen_1.0.9_all.ipk` from the [latest release](https://github.com/ammar027/lumen-webos/releases/latest) and install it on your TV:
+Other models and firmware are unverified. The public generic sound has browser
+coverage; physical listening acceptance used a private local sound override.
+The ten-minute idle test and multi-hour slideshow were not completed. The preview
+is not installed automatically on an existing TV.
 
-- **With a mouse and no command line:** open [Dev Manager Desktop](https://github.com/webosbrew/dev-manager-desktop/releases), add your TV, go to *Apps* and drop the `.ipk` onto the window.
-- **Or** with the webOS CLI: `npx -p @webos-tools/cli ares-install --device lgtv com.ammar027.lumen_1.0.9_all.ipk`.
+## Install or build
 
-The release build leaves out third-party app logos and the default wallpapers are public-domain paintings; apps without an icon get a plain tile.
-Optional: to make the remote's **Home** button open Lumen, see the TV scripts under [tools/tv/](tools/tv/).
+Install `local.lumen.trial_0.3.14_all.ipk` from the preview release with Dev Manager
+Desktop or the webOS CLI. Verify it against `SHA256SUMS.txt` first. The app appears
+as **Lumen webOS 5** and uses app ID `local.lumen.trial`.
 
-## How to build it
-
-An optional [webOS 5 trial](trial/README.md) adds an expanding five-column app grid,
-bounded native icon reads, an in-app photo frame, and shared Inputs / Control Center
-surfaces. It targets Chromium 68 and installs separately as `local.lumen.trial`.
-Its pinned source overlay and fixture checks are independent of the existing patch pipeline below.
-
-`app/` is a clone of the upstream launcher and is not part of this repository. Everything changed is re-applied by the scripts in `tools/`.
-See [REBUILD.md](REBUILD.md) for the exact order.
+Installation leaves the original Lumen app and LG Home installed. It does not map
+Home, install a root service or change startup/wake hooks, clock, hosts or LG's
+global screensaver timer. Existing trial users should read the update and recovery
+notes because this package uses the same trial app ID.
 
 ```sh
-git clone https://github.com/partridgeworks/webos-launcher app
-cd app && npm install
-# then the steps in REBUILD.md
+python3 trial/prepare.py
+npm --prefix app ci
+npm --prefix app run build
+npm --prefix app run package
+python3 trial/verify-package.py app/build/local.lumen.trial_0.3.14_all.ipk
 ```
 
-Brand icons and logos of third-party apps, and the bundled default wallpapers, are **not** included here (trademarks and other people's photographs).
-`tools/gen_iconpack.py` and `tools/build_iconpack.py` build the icon tiles from logos you put in `tools/logos/` and from your own TV's app icons.
+The preparation command pins the launcher base, applies the readable source overlay
+and generates public assets. It refuses to overwrite an existing `app/`. The older
+upstream patch pipeline remains under [REBUILD.md](REBUILD.md); this fork's preview
+uses `trial/prepare.py` instead.
 
-## Install on the TV
+## Upstream contributions
 
-```sh
-ares-setup-device           # add your TV as "lgtv" (developer mode on, or rooted)
-npx -p @webos-tools/cli ares-install --device lgtv build/*.ipk
-```
-
-To make Home open Lumen, copy `tools/tv/watch.sh` to `/var/lib/homehook/` and `tools/tv/60-homehook` to `/var/lib/webosbrew/init.d/` on the TV.
-To undo it, delete the hook file and stop `watch.sh`.
+Lumen 1.1 independently adopted the chunked-icon fallback and clearer generic
+input labels from PR #8. Future contributions should be small fixes that fit
+upstream; this fork keeps the webOS 5 Home, panels and audio implementation.
+See the [comparison and follow-up candidates](docs/UPSTREAM-1.1-COMPARISON.md).
 
 ## Credits
 
-Built on partridgeworks/webos-launcher (MIT). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Not affiliated with LG, Apple or any app vendor.
-Licence: [MIT](LICENSE).
+Thanks to ammar027 for Lumen, the partridgeworks/webos-launcher contributors, and
+lesnolie/Tigris for the glass-edge rendering reference adapted under MIT.
+The typeface is Geist under the SIL Open Font License. See
+[third-party notices](THIRD_PARTY_NOTICES.md) and [MIT licence](LICENSE).
+This project is not affiliated with LG, Apple or any app vendor.

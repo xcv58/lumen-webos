@@ -23,7 +23,12 @@ def main():
     target.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(['git', 'clone', '--no-checkout', UPSTREAM, str(target)], check=True)
     subprocess.run(['git', '-C', str(target), 'checkout', '--detach', REVISION], check=True)
-    shutil.copytree(ROOT / 'trial/overlay', target, dirs_exist_ok=True)
+    shutil.copytree(ROOT / 'trial/overlay', target, dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns('catalog.local.ts', 'trialSeed.local.json', '.DS_Store'))
+    # Public builds start from generated cards and backgrounds, even when the
+    # pinned base launcher contains its own third-party app icons or wallpapers.
+    for relative in ['public/icons/apps', 'public/iconpack', 'public/wallpapers', 'public/private']:
+        shutil.rmtree(target / relative, ignore_errors=True)
     for name in ['icon.png', 'largeIcon.png', 'splash.png']:
         shutil.copy2(ROOT / 'app-assets/public' / name, target / 'public' / name)
     shutil.copy2(ROOT / 'app-assets/geist-wght.woff2', target / 'src/assets/geist-wght.woff2')

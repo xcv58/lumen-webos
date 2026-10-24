@@ -1,9 +1,9 @@
-# Optional webOS 5 trial
+# Lumen webOS 5 preview
 
 This trial adds a five-column expanding app grid, more reliable native icon loading,
 an in-app photo frame, and shared Inputs / Control Center panels. It is based on
 Lumen `497e9182fd9d0d12d7ed9bfbafc0ee15d7139a79` and installs separately as
-`local.lumen.trial` (version 0.3.13), preserving the original Lumen installation.
+`local.lumen.trial` (version 0.3.14), preserving the original Lumen installation.
 
 These browser previews use a fixed demo clock, synthetic app order and TV controls,
 generated text cards and original abstract artwork. Weather is hidden. They contain
@@ -19,6 +19,12 @@ frame uses a generated landscape in place of an online photograph.
 | ![Photo frame with generated landscape and fixed clock](../docs/trial/photo-frame.png) | ![The same volume pill in light appearance](../docs/trial/control-center-light.png) |
 
 See [screenshot provenance and reproduction](../docs/trial/README.md).
+
+Public preview 0.3.14 retains the accepted 0.3.13 UI. It adds public packaging
+checks, removes bundled third-party app icons, and starts live app discovery,
+weather and navigation sounds Off on a fresh install. Saved preferences are
+retained. See [installation and recovery](../docs/INSTALL-WEBOS5.md) and the
+[upstream 1.1 comparison](../docs/UPSTREAM-1.1-COMPARISON.md).
 
 ## Build from a fresh checkout
 
@@ -101,7 +107,7 @@ own installed apps. Existing trial preferences continue to load from localStorag
 ## Install and recovery
 
 Install the package from `app/build/` with Dev Manager Desktop or a configured
-`ares-install --device DEVICE app/build/local.lumen.trial_0.3.13_all.ipk`.
+`ares-install --device DEVICE app/build/local.lumen.trial_0.3.14_all.ipk`.
 Rooted-TV features use the existing Homebrew Channel service; the trial does not
 install a new system service or change the Home button, startup app, LG screensaver
 timer, clock or hosts file. LG Home remains available from Control Center and the
@@ -126,6 +132,8 @@ npm --prefix trial test
 
 The runner starts and stops its own local preview on port 5187. It uses synthetic
 app preferences, mocked photo responses and sanitized webOS 5 control fixtures.
+An isolated fresh-profile check also verifies that live app discovery, navigation
+sounds and weather start Off, with no location/history seed or weather lookup.
 It checks icon chunking/cache behavior, grid editing and folders, photo-frame wake
 handling, text geometry, settings errors, stale reads, outside setting changes,
 active versus last-used inputs and light appearance. Rendered-pixel checks exercise
@@ -237,7 +245,8 @@ A full ten-minute idle check was explicitly skipped. Standby/resume, a multi-hou
 slideshow and other TV models/firmwares remain unverified. This is an experimental
 trial for upstream review, not a replacement for the existing release pipeline.
 
-The pinned upstream dependency lockfile is unchanged. Its build toolchain currently
-reports npm audit advisories, including two high-severity transitive dependencies
-under the webOS CLI even with `--omit=dev`. Updating that toolchain is separate from
-this trial overlay.
+The pinned launcher dependency lockfile is unchanged. On October 24, 2026, npm
+audit reported nine build/CLI-toolchain advisories (two moderate, six high and one
+critical); the `--omit=dev` report still listed two high advisories. The critical
+item is proxy-addr under the webOS CLI. Node build/CLI dependencies are not included
+in the TV IPK. Toolchain upgrades remain separate from this preview.
