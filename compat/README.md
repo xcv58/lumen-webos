@@ -5,7 +5,7 @@ Inputs and Control Center surfaces, volume pill, focus feedback, cached daily
 backgrounds and photo frame. It starts from upstream Lumen v1.1.4 at
 `a85b99a4a415b4f2fff5e09d50c85ce950a0504f` and applies all 92 upstream layers.
 The upstream scripts are unchanged; the presentation is a readable module layer.
-The maintained `webos5` fork and the accepted default TV app remain separate.
+The maintained `webos5` fork and the previous accepted TV app remain separate.
 
 ## What matches
 
@@ -81,8 +81,22 @@ The candidate ID is `local.lumen.upstreamtrial`; its native Home category is
 removed. Backup/flag/idle state is under `/tmp/lumen-upstreamtrial`, and photo
 files are in its own app directory. It installs no persistent Home/startup
 service. Both accepted Trial and this candidate are protected from the uninstall
-menu. The previously approved Home mapping and startup/wake hooks still target
-`local.lumen.trial`.
+menu. After the owner's separate request to make testing easier, the existing
+Home mapping was pointed at `local.lumen.upstreamtrial`, and its private wake
+helper was replaced with `tv/on-power.sh`. This adoption is separate from the
+IPK; building or installing the app does not claim Home.
+
+The wake helper only replaces a launcher screen after eight seconds of safe
+foreground observations. HDMI inputs and other apps cancel the entire wake
+attempt. CEC, unknown wake reasons and failed reason reads also prevent launch;
+foreground read errors wait only within a bounded window. Power, wake reason and
+foreground are checked again just before launch. Screen Off and Screen Saver
+never request a launcher. Pressing Home is independent of these checks and
+opens the new trial immediately. A remote power-on that resumes HDMI therefore
+keeps HDMI selected too; Home remains the explicit way to open the trial.
+
+The old accepted app, LG Home and the previous hook configuration are retained
+for recovery. See `tv/README.md` for the adoption policy and rollback boundaries.
 
 ## Verification
 
@@ -109,6 +123,12 @@ stale/failed reads, rapid focus feedback, native audio fixtures and keepalive
 cleanup. Upstream controls/style switching and StandBy navigation also passed.
 The five upstream Python checks and startup readiness suite passed.
 
+`node compat/tests/wake-helper-tests.mjs` exercises the separate optional wake
+helper. Its 28 cases cover all four HDMI inputs, AV, delayed CEC switching, late
+changes immediately before launch, unknown/failed status reads, bounded retries,
+standby/suspend gaps and intentional display modes. These fixtures do not replace
+a physical console-wake test.
+
 Real-TV checks use LG 86UN8570AUD, webOS 5.6.2-21, firmware 04.64.00, Chrome 68.
 The installed 1.1.5 bundle and selected cue hashes matched. Native checks passed
 for Home/grid, Inputs and Control Center geometry and text bounds, the live volume
@@ -116,9 +136,12 @@ fill with retained focus, choice/input return focus and the photo frame's consum
 wake key. Twelve rapid Home moves dispatched twelve successful native cues, with
 measured JS dispatch delays of 0.7–4.8 ms. Inputs and Control Center shared one
 keepalive, which stopped for the photo frame and resumed silently afterward.
-The accepted bundle, cue, config, Home mapping and startup hooks matched their
-fresh pre-install snapshot; original volume, picture, sound and global screensaver
-settings were preserved. The maintained fork checkout remained clean.
+At the UI installation checkpoint, the accepted bundle, cue, config, Home mapping
+and startup hooks matched their fresh pre-install snapshot; original volume,
+picture, sound and global screensaver settings were preserved. The later explicit
+default adoption changes only Home's target and the private wake helper, retaining
+the previous app and its recovery route. The maintained fork checkout remains
+separate from this experiment.
 
 The installed local candidate IPK SHA256 is
 `6544df362820665ce7cfce6ccf0f6d99ed6139426595de8b01e2ce6807acf20a`.
