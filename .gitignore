@@ -16,3 +16,4 @@ lumen-icons/
 
 .trial-evidence/
 compat/tests/node_modules
+.cache/

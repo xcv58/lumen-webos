@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Build upstream's current pipeline, then add the isolated Chromium 68 candidate patch."""
+import argparse
 import hashlib
 import io
 import json
@@ -14,10 +15,16 @@ from presentation import apply as apply_presentation
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / 'app'
-EVIDENCE = ROOT.parent / 'lumen-upstream-first-evidence'
+EVIDENCE = ROOT / '.trial-evidence'
 APP_ID = 'local.lumen.upstreamtrial'
 PIN = '1e2c39b9a988ceb1b258e40e3592bda84a2aa076'
 UPSTREAM_COMMIT = 'a85b99a4a415b4f2fff5e09d50c85ce950a0504f'
+RELEASE_SHA256 = 'ba56dd6499eab4cea1582db904b9de1cdd89c01ec12338a9a14f139783516605'
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--upstream-release-dir', type=Path, default=ROOT / '.cache/upstream-release')
+parser.add_argument('--local-reference', action='store_true', help='Private local assets; never use for public builds')
+parser.add_argument('--reference-assets', type=Path, default=ROOT.parent / 'lumen-upstream-first-evidence/reference-assets')
+args = parser.parse_args()
 
 
 def run(*args, cwd=APP):
@@ -30,8 +37,11 @@ def layer(name):
 
 assert subprocess.check_output(['git', '-C', str(APP), 'rev-parse', 'HEAD'], text=True).strip() == PIN
 run('git', 'merge-base', '--is-ancestor', UPSTREAM_COMMIT, 'HEAD', cwd=ROOT)
-run('git', 'checkout', '--', 'src', 'index.html', 'public/appinfo.json', 'vite.config.ts')
-shutil.rmtree(APP / 'public/iconpack', ignore_errors=True)
+run('git', 'checkout', '--', 'src', 'index.html', 'vite.config.ts')
+# public/ is generated. Restore it completely so a previous private build cannot
+# leave native icons, a private font, cached photographs or credentials behind.
+shutil.rmtree(APP / 'public')
+run('git', 'checkout', '--', 'public')
 shutil.copytree(ROOT / 'app-assets/public', APP / 'public', dirs_exist_ok=True)
 layer('build_catalog.py')
 layer('build_iconpack.py')
@@ -69,6 +79,8 @@ for path in (APP / 'src').rglob('*'):
     after = after.replace('touch /tmp/allow_lg_home', 'mkdir -p /tmp/lumen-upstreamtrial && touch /tmp/lumen-upstreamtrial/allow_lg_home')
     if path.name == 'storage.ts':
         after = after.replace('showWeather: true,', 'showWeather: false,')
+        after = after.replace('useHomebrew: true,', 'useHomebrew: false,')
+        after = after.replace('useHomebrew: parsed.useHomebrew !== false,', 'useHomebrew: parsed.useHomebrew === true,')
     if after != before:
         path.write_text(after)
         changed.append(str(path.relative_to(APP)))
@@ -79,9 +91,10 @@ manifest.pop('appCategory', None)
 manifest_path.write_text(json.dumps(manifest, indent=2) + '\n')
 
 # Use only the publicly released artwork/licences, with its published checksum.
-release = EVIDENCE / 'upstream-release/com.ammar027.lumen_1.1.4_all.ipk'
+release = args.upstream_release_dir / 'com.ammar027.lumen_1.1.4_all.ipk'
 digest = hashlib.sha256(release.read_bytes()).hexdigest()
-assert digest in (release.parent / 'SHA256SUMS.txt').read_text()
+assert digest == RELEASE_SHA256, 'Unexpected upstream release bytes'
+assert f'{digest}  {release.name}' in (release.parent / 'SHA256SUMS.txt').read_text()
 payload = subprocess.check_output(['ar', '-p', str(release), 'data.tar.gz'])
 public_assets = []
 with tarfile.open(fileobj=io.BytesIO(payload), mode='r:gz') as archive:
@@ -98,6 +111,9 @@ with tarfile.open(fileobj=io.BytesIO(payload), mode='r:gz') as archive:
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(archive.extractfile(entry).read())
             public_assets.append(str(relative))
+shutil.rmtree(APP / 'public/icons/apps', ignore_errors=True)
+shutil.copytree(ROOT / 'compat/licenses', APP / 'public/licenses', dirs_exist_ok=True)
+shutil.copy2(ROOT / 'LICENSE', APP / 'public/licenses/Lumen-MIT.txt')
 wallpapers = [
  'View of Lake Pepin, Minnesota - Robert S. Duncanson',
  'View near Newport - John Frederick Kensett',
@@ -117,17 +133,17 @@ EVIDENCE.mkdir(exist_ok=True)
  'browserTarget': 'chrome68', 'compatibilityChangedSourceFiles': changed,
  'runtimeCompatibilityFiles': runtime_compat,
  'matchedPresentation': True,
- 'localReferenceAssets': '--local-reference' in sys.argv,
+ 'localReferenceAssets': args.local_reference,
  'publicReleaseSHA256': digest, 'publicAssets': public_assets,
  'homeCategoryRemoved': True, 'sharedBackupPathsIsolated': True,
 }, indent=2) + '\n')
 # Public cue by default. The owner's selected cue stays outside Git.
 run(sys.executable, ROOT / 'compat/generate-navigation-sound.py', '--output', APP / 'public/sounds/navigation-focus-v1.pcm', cwd=ROOT)
-private_cue = EVIDENCE / 'reference-assets/navigation-focus-v1.pcm'
-if '--local-reference' in sys.argv:
+private_cue = args.reference_assets / 'navigation-focus-v1.pcm'
+if args.local_reference:
     assert private_cue.is_file(), 'Prepare the private reference cue first'
     shutil.copy2(private_cue, APP / 'public/sounds/navigation-focus-v1.pcm')
-    shutil.copytree(EVIDENCE / 'reference-assets/iconpack', APP / 'public/iconpack', dirs_exist_ok=True)
-    shutil.copy2(EVIDENCE / 'reference-assets/iconpack.ts', APP / 'src/config/iconpack.ts')
+    shutil.copytree(args.reference_assets / 'iconpack', APP / 'public/iconpack', dirs_exist_ok=True)
+    shutil.copy2(args.reference_assets / 'iconpack.ts', APP / 'src/config/iconpack.ts')
 run('npm', 'run', 'build')
 run('npm', 'run', 'package')

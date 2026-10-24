@@ -24,3 +24,14 @@ The canvas backdrops for the lower rows and Settings (`lib/blurCanvas.ts`), the 
 ## xcv58's PR #8
 
 Two small pieces of the webOS 5 launcher trial in PR #8 by [xcv58](https://github.com/xcv58) were taken over by hand: the app icon drawn in pieces, and "Input Source N" shown as "HDMI N" (`tools/apply_webos5.py`). The rest of that PR was not merged. Thank you.
+
+## Integrated webOS 5 presentation
+
+`compat/ui/` carries the MIT-licensed Home, panel, photo-frame and focus-feedback
+implementation from xcv58's previous webOS 5 branch. The glass-edge alignment
+adaptation follows lesnolie/Tigris (MIT); its notice is in
+`compat/licenses/Tigris-MIT.txt` and is included in public packages. The Geist
+notice is in `compat/licenses/Geist-OFL.txt`. Public packages also include the
+Lumen, launcher and Preact license notices. Bundled painting assets come only
+from the checksum-pinned upstream public release. Private sound and app artwork
+from the local physical-TV build are excluded.

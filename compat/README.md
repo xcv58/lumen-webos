@@ -5,8 +5,9 @@ Inputs and Control Center surfaces, volume pill, focus feedback, cached daily
 backgrounds and photo frame. It starts from upstream Lumen v1.1.4 at
 `a85b99a4a415b4f2fff5e09d50c85ce950a0504f` and applies all 92 upstream layers.
 The upstream scripts are unchanged; the presentation is a readable module layer.
-The maintained `webos5` fork and the previous accepted build remain available
-separately. After acceptance, the two obsolete Lumen apps were removed from the TV.
+This integration is maintained on `webos5-upstream`. The previous 0.3.14 source
+is preserved by the `archive/webos5-before-upstream-2026-10-24` tag. After acceptance,
+the two obsolete Lumen apps were removed from the TV.
 
 ## What matches
 
@@ -49,11 +50,12 @@ layout commit, correcting a first-key race found by the integration checks.
 Use Python 3.9+, Node/npm and upstream's toolchain. Prepare `app/` as in the
 upstream rebuild instructions, pinned to launcher commit
 `1e2c39b9a988ceb1b258e40e3592bda84a2aa076`, and install its npm dependencies.
-Place the official v1.1.4 IPK and its published `SHA256SUMS.txt` in
-`../lumen-upstream-first-evidence/upstream-release/`. Then run:
+Fetch the checksum-pinned official v1.1.4 public assets, then build:
 
 ```sh
+python3 compat/fetch-upstream-release.py
 python3 compat/build.py
+python3 compat/verify-package.py app/build/local.lumen.upstreamtrial_1.1.5_all.ipk
 ```
 
 This regenerates `app/`, applies all upstream layers, applies compatibility and
@@ -65,10 +67,13 @@ assertion is tolerated only when its expected UI and watcher markers are present
 
 Ordinary builds use the original generated generic cue. The owner's local build
 uses `--local-reference`, which reads the selected PCM and icon pack from the
-private evidence directory. Local assets, TV preferences, connection helpers,
+private reference directory supplied with `--reference-assets`. Local assets, TV preferences, connection helpers,
 credentials and actual TV screenshots are never source or public release assets.
 The local build's app order and photo cache are copied separately into only the
-candidate's profile on the TV. Public build defaults do not contain owner data.
+candidate's profile on the TV. Public builds reset the generated public directory and remove bundled third-party
+app icons. Weather, navigation sounds and live Homebrew discovery start Off.
+The package audit rejects private artwork, custom audio, cached photos and
+unexpected services. Public build defaults do not contain owner data.
 
 ## webOS 5 and isolation
 

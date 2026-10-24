@@ -1,4 +1,9 @@
-# Rebuilding Lumen
+# Upstream pipeline reference
+
+The maintained fork builds with [`compat/build.py`](compat/README.md), which applies
+the full pipeline below before adding the accepted presentation and Chromium 68
+compatibility. Follow the root README for this fork. The order below remains the
+upstream layer list consumed by the integrated builder.
 
 `app/` is a clone of partridgeworks/webos-launcher (its own git repo, not tracked here). Everything we changed is re-applied by the scripts in `tools/`:
 

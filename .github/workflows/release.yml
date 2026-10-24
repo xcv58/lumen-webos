@@ -1,31 +1,17 @@
-# Rebuilds Lumen from the upstream launcher with every layer (tools/rebuild.py, the order in REBUILD.md) and packages the public build
-# (tools/build_release.py: no third-party logos, no private font, public-domain wallpapers).
-#  - a push to main, or "Run workflow": builds the .ipk and keeps it as a workflow artifact (14 days). Nothing is published.
-#  - a tag v* (git tag v1.1.4 && git push origin v1.1.4): the same build, published as the GitHub release of that tag (created if it is not there yet),
-#    and added to the Homebrew Channel repository on the hbc-repo branch.
-#  - "Run workflow" with a tag in "publish_tag": adds that release's existing .ipk to the Homebrew Channel repository (no rebuild).
-# Homebrew Channel: add https://raw.githubusercontent.com/ammar027/lumen-webos/hbc-repo/stable/apps.json in the Channel's settings.
-name: release
+name: integrated build
 on:
   push:
-    branches: [main]
-    tags: ['v*']
+    branches: [webos5-upstream]
+  pull_request:
+    branches: [webos5-upstream]
   workflow_dispatch:
-    inputs:
-      publish_tag:
-        description: 'Tag whose release .ipk goes into the Homebrew Channel repository (e.g. v1.1.3). Leave empty for a plain build.'
-        required: false
 permissions:
-  contents: write
+  contents: read
 concurrency:
-  group: release
-  cancel-in-progress: false
-env:
-  # the upstream launcher the layers were written against
-  UPSTREAM: 1e2c39b9a988ceb1b258e40e3592bda84a2aa076
+  group: integrated-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
-    if: github.event.inputs.publish_tag == ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,56 +20,67 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Put the repository where the layers expect it
-        run: |
-          mkdir -p "$HOME/Developer"
-          ln -s "$GITHUB_WORKSPACE" "$HOME/Developer/webos-launcher-tvos"
-      - name: Upstream launcher
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Pinned upstream launcher and test dependencies
         run: |
           git clone https://github.com/partridgeworks/webos-launcher app
-          git -C app checkout "$UPSTREAM"
+          git -C app checkout 1e2c39b9a988ceb1b258e40e3592bda84a2aa076
           npm ci --prefix app
-          npm ci --prefix tools
-      - name: Apply every layer and build
-        run: python3 tools/rebuild.py
-      - name: Public package
-        run: python3 tools/build_release.py
-      - name: Keep the build
-        if: github.ref_type != 'tag'
+          npm ci --prefix compat/tests
+          npx --prefix compat/tests playwright install --with-deps chromium
+      - name: Pinned public upstream release assets
+        run: python3 compat/fetch-upstream-release.py
+      - name: Build all upstream layers and accepted presentation
+        run: python3 compat/build.py
+      - name: Audit public package
+        run: |
+          python3 compat/verify-package.py app/build/local.lumen.upstreamtrial_1.1.5_all.ipk --output .trial-evidence/public-package.json
+          cd app/build
+          sha256sum local.lumen.upstreamtrial_1.1.5_all.ipk > SHA256SUMS.txt
+      - name: Upstream and safe-wake checks
+        run: |
+          python3 -B -m unittest discover -s tools/test -p 'test_*.py' -v
+          node tools/test/startup.test.cjs
+          node compat/tests/wake-helper-tests.mjs
+      - name: Home, Inputs and Control Center checks
+        run: |
+          python3 -m http.server 5191 --bind 127.0.0.1 --directory app/dist > /tmp/lumen-preview.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for _attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5191/ > /dev/null; then break; fi
+            sleep 1
+          done
+          TRIAL_URL=http://127.0.0.1:5191 node compat/tests/panel-tests.mjs
+          TRIAL_URL=http://127.0.0.1:5191 node compat/tests/grid-edit-tests.mjs
+          TRIAL_URL=http://127.0.0.1:5191 node compat/tests/upstream-integration-tests.mjs
+      - name: Focus sound and cleanup checks
+        run: |
+          npm --prefix app run dev -- --host 127.0.0.1 --port 5193 > /tmp/lumen-vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for _attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5193/ > /dev/null; then break; fi
+            sleep 1
+          done
+          TRIAL_URL=http://127.0.0.1:5193 node compat/tests/navigation-sound-tests.mjs
+      - name: Keep audited public build
         uses: actions/upload-artifact@v4
         with:
-          name: lumen-build
-          path: release/*
+          name: lumen-webos5-integrated
+          include-hidden-files: true
+          path: |
+            app/build/*.ipk
+            app/build/SHA256SUMS.txt
+            .trial-evidence/public-package.json
           retention-days: 14
-      - name: GitHub release
-        if: github.ref_type == 'tag'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
-        run: |
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Lumen ${TAG#v}" --notes "Built from $GITHUB_SHA. Install: drop the .ipk onto Dev Manager, or ares-install --device lgtv." --target "$GITHUB_SHA"
-          gh release upload "$TAG" release/*.ipk release/SHA256SUMS.txt --clobber
-      - name: Homebrew Channel repository
-        if: github.ref_type == 'tag'
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          IPK=$(ls release/*.ipk)
-          bash tools/hbc_publish.sh "$IPK" "$TAG"
-  hbc:
-    # adds an existing release to the Homebrew Channel repository without rebuilding it
-    if: github.event.inputs.publish_tag != ''
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      - name: Keep synthetic test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          fetch-depth: 0
-      - name: The release's .ipk
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.inputs.publish_tag }}
-        run: gh release download "$TAG" --pattern '*.ipk' --dir release
-      - name: Homebrew Channel repository
-        env:
-          TAG: ${{ github.event.inputs.publish_tag }}
-        run: bash tools/hbc_publish.sh "$(ls release/*.ipk)" "$TAG"
+          name: integrated-test-evidence
+          include-hidden-files: true
+          path: .trial-evidence/
+          retention-days: 14
