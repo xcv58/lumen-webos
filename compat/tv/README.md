@@ -7,7 +7,8 @@ authorization are required to change persistent Home/startup behavior.
 The existing LG Input Hook maps only Home (773) to
 `local.lumen.upstreamtrial`. Other mappings remain unchanged. The app and its
 manifest stay unchanged; this does not set a firmware-specific native default
-Home category. Both the previous accepted launcher and LG Home remain installed.
+Home category. LG Home remains installed. After owner acceptance, the older Lumen
+apps were removed; their installers remain in private local backups.
 
 The existing Homebrew init script starts `on-power.sh` from
 `/var/lib/lumen-trial-launcher/on-power.sh`. The legacy directory name is retained
@@ -45,7 +46,9 @@ Do not reinject Input Hook or change other remote bindings.
 To suspend automatic wake behavior, create
 `/var/lib/lumen-trial-launcher/disabled`. The Home mapping remains usable. To
 return Home to the earlier app, change only mapping 773 back to
-`{"action":"launch","id":"local.lumen.trial"}`. Keep unrelated mappings.
+`{"action":"launch","id":"local.lumen.trial"}` only after reinstalling its
+backed-up package and verifying it opens. Keep unrelated mappings. Never map Home
+to an app that is not installed.
 Restoring the old unconditional helper also restores the console-wake defect;
 prefer keeping the new guard or leaving automatic wake disabled.
 

@@ -5,7 +5,8 @@ Inputs and Control Center surfaces, volume pill, focus feedback, cached daily
 backgrounds and photo frame. It starts from upstream Lumen v1.1.4 at
 `a85b99a4a415b4f2fff5e09d50c85ce950a0504f` and applies all 92 upstream layers.
 The upstream scripts are unchanged; the presentation is a readable module layer.
-The maintained `webos5` fork and the previous accepted TV app remain separate.
+The maintained `webos5` fork and the previous accepted build remain available
+separately. After acceptance, the two obsolete Lumen apps were removed from the TV.
 
 ## What matches
 
@@ -95,8 +96,10 @@ never request a launcher. Pressing Home is independent of these checks and
 opens the new trial immediately. A remote power-on that resumes HDMI therefore
 keeps HDMI selected too; Home remains the explicit way to open the trial.
 
-The old accepted app, LG Home and the previous hook configuration are retained
-for recovery. See `tv/README.md` for the adoption policy and rollback boundaries.
+LG Home and the previous hook configuration are retained for recovery. The old
+Lumen installers and earlier preferences remain in private local backups; the old
+apps are no longer installed on the TV. See `tv/README.md` for the adoption policy
+and rollback boundaries.
 
 ## Verification
 
@@ -142,6 +145,14 @@ picture, sound and global screensaver settings were preserved. The later explici
 default adoption changes only Home's target and the private wake helper, retaining
 the previous app and its recovery route. The maintained fork checkout remains
 separate from this experiment.
+
+After owner acceptance, cleanup removed only Lumen 1.0.9 (`com.ammar027.lumen`)
+and Lumen Trial 0.3.13 (`local.lumen.trial`). App registrations and installation
+directories were absent afterward. The remaining app IDs exactly matched the
+pre-cleanup inventory minus those two. The accepted 1.1.5 bundle, preferences,
+Home mapping, wake guard, audio settings and startup entries were unchanged.
+LG Home, Homebrew Channel and LG Input Hook remain installed. The old installers
+are kept privately on the Mac; no app or setting was republished during cleanup.
 
 The installed local candidate IPK SHA256 is
 `6544df362820665ce7cfce6ccf0f6d99ed6139426595de8b01e2ce6807acf20a`.
