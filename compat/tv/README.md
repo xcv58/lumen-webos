@@ -50,4 +50,6 @@ Restoring the old unconditional helper also restores the console-wake defect;
 prefer keeping the new guard or leaving automatic wake disabled.
 
 Run `node compat/tests/wake-helper-tests.mjs` for the isolated state fixtures.
-Real power-on/CEC and physical Home acceptance are separate device checks.
+Real power-on/CEC and physical Home acceptance are separate device checks. On
+2026-10-24, the owner confirmed both on the target LG TV: console wake kept the
+game HDMI input stable, and the physical Home button opened the new launcher.

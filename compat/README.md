@@ -148,6 +148,9 @@ The installed local candidate IPK SHA256 is
 This local package contains the owner's selected cue/artwork and is not a public
 release asset. Detailed device evidence remains outside Git.
 
-Physical listening and owner visual acceptance of this new candidate are separate
-from automated checks. A full ten-minute idle test and exhaustive aerial/Immich
-or multi-hour stability checks are outside this trial.
+On 2026-10-24, the owner confirmed that the updated UI looks correct, the physical
+Home button opens this launcher, and the game HDMI input remains stable when the
+console wakes the TV. This is now the accepted default trial setup on that TV.
+Physical listening was not separately reported in that confirmation. A full
+ten-minute idle test and exhaustive aerial/Immich or multi-hour stability checks
+are outside this trial.
